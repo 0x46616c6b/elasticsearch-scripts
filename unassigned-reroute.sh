@@ -46,20 +46,22 @@ if [[ -z $ESHOST ]] || [[ -z $TARGETNODE ]]; then
   exit 1
 fi
 
-for line in $(curl -s '${ESNODE}:9200/_cat/shards' | fgrep UNASSIGNED); do
+IFS=$'\n'
+for line in $(curl -s "${ESHOST}:9200/_cat/shards" | fgrep UNASSIGNED); do
   INDEX=$(echo $line | (awk '{print $1}'))
   SHARD=$(echo $line | (awk '{print $2}'))
 
-  curl -XPOST '${ESNODE}:9200/_cluster/reroute?pretty' -d '{
+  curl -XPOST "$ESHOST:9200/_cluster/reroute?pretty" -d '{
      "commands": [
         {
             "allocate": {
                 "index": "'$INDEX'",
-                "shard": '$SHARD',
+                "shard": '"$SHARD"',
                 "node": "'$TARGETNODE'",
                 "allow_primary": true
           }
         }
     ]
   }'
+
 done
